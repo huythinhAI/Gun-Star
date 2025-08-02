@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Game Bắn Súng</title>
+    <style>
+      body {
+        margin: 0;
+        overflow: hidden;
+        font-family: Arial, sans-serif;
+        background-color: #111;
+      }
+      canvas {
+        display: block;
+        background: #222;
+      }
+      #menu {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.85);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        z-index: 10;
+      }
+      #startBtn {
+        padding: 15px 30px;
+        font-size: 24px;
+        margin-top: 20px;
+        cursor: pointer;
+        background: #28a745;
+        border: none;
+        border-radius: 8px;
+        color: white;
+      }
+      #scoreBoard {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        color: white;
+        font-size: 20px;
+        z-index: 5;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="menu">
+      <h1>🔥 Game Bắn Súng 🔫</h1>
+      <button id="startBtn">Bắt đầu</button>
+    </div>
+    <div id="scoreBoard">Điểm: 0</div>
+    <canvas id="gameCanvas"></canvas>
+
+    <script>
+      const canvas = document.getElementById("gameCanvas");
+      const ctx = canvas.getContext("2d");
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+
+      const menu = document.getElementById("menu");
+      const startBtn = document.getElementById("startBtn");
+      const scoreBoard = document.getElementById("scoreBoard");
+      let score = 0;
+
+      class Player {
+        constructor() {
+          this.x = canvas.width / 2;
+          this.y = canvas.height / 2;
+          this.radius = 20;
+          this.color = "white";
+        }
+
+        draw() {
+          ctx.beginPath();
+          ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+          ctx.fillStyle = this.color;
+          ctx.fill();
+        }
+      }
+
+      class Bullet {
+        constructor(x, y, angle) {
+          this.x = x;
+          this.y = y;
+          this.radius = 5;
+          this.speed = 10;
+          this.dx = Math.cos(angle) * this.speed;
+          this.dy = Math.sin(angle) * this.speed;
+          this.color = "yellow";
+        }
+
+        update() {
+          this.x += this.dx;
+          this.y += this.dy;
+          this.draw();
+        }
+
+        draw() {
+          ctx.beginPath();
+          ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+          ctx.fillStyle = this.color;
+          ctx.fill();
+        }
+      }
+
+      class Enemy {
+        constructor() {
+          this.radius = 20;
+          this.x = Math.random() < 0.5 ? 0 : canvas.width;
+          this.y = Math.random() * canvas.height;
+          this.color = "red";
+
+          const angle = Math.atan2(player.y - this.y, player.x - this.x);
+          this.speed = 2;
+          this.dx = Math.cos(angle) * this.speed;
+          this.dy = Math.sin(angle) * this.speed;
+        }
+
+        update() {
+          this.x += this.dx;
+          this.y += this.dy;
+          this.draw();
+        }
+
+        draw() {
+          ctx.beginPath();
+          ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+          ctx.fillStyle = this.color;
+          ctx.fill();
+        }
+      }
+
+      const player = new Player();
+      const bullets = [];
+      const enemies = [];
+
+      function spawnEnemy() {
+        enemies.push(new Enemy());
+      }
+
+      function startGame() {
+        menu.style.display = "none";
+        score = 0;
+        scoreBoard.innerText = "Điểm: 0";
+        enemies.length = 0;
+        bullets.length = 0;
+        player.x = canvas.width / 2;
+        player.y = canvas.height / 2;
+        setInterval(spawnEnemy, 1500);
+        animate();
+      }
+
+      window.addEventListener("click", (e) => {
+        const angle = Math.atan2(e.clientY - player.y, e.clientX - player.x);
+        bullets.push(new Bullet(player.x, player.y, angle));
+      });
+
+      function animate() {
+        requestAnimationFrame(animate);
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        player.draw();
+
+        bullets.forEach((bullet, index) => {
+          bullet.update();
+          if (
+            bullet.x < 0 ||
+            bullet.x > canvas.width ||
+            bullet.y < 0 ||
+            bullet.y > canvas.height
+          ) {
+            bullets.splice(index, 1);
+          }
+        });
+
+        enemies.forEach((enemy, eIndex) => {
+          enemy.update();
+
+          bullets.forEach((bullet, bIndex) => {
+            const dist = Math.hypot(enemy.x - bullet.x, enemy.y - bullet.y);
+            if (dist < enemy.radius + bullet.radius) {
+              enemies.splice(eIndex, 1);
+              bullets.splice(bIndex, 1);
+              score++;
+              scoreBoard.innerText = "Điểm: " + score;
+            }
+          });
+        });
+      }
+
+      startBtn.addEventListener("click", startGame);
+    </script>
+  </body>
+</html>
